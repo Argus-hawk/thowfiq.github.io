@@ -434,7 +434,16 @@ header.nav.scrolled .navbar{
 .hours-card h5{ font-size:.75rem; text-transform:uppercase; letter-spacing:.07em; color:var(--muted-dim); margin-bottom:10px; }
 .hours-row{ display:flex; justify-content:space-between; font-size:.86rem; padding:5px 0; color:var(--muted); }
 .hours-row span:last-child{ color:var(--text); font-weight:600; }
-.calendly-btn{ margin-top:14px; width:100%; justify-content:center; }
+.callback-card{ margin-top:14px; padding:22px 20px; }
+.callback-card h5{ font-size:.92rem; font-weight:700; margin-bottom:4px; }
+.callback-sub{ font-size:.8rem; color:var(--muted); margin-bottom:16px; }
+.callback-form{ display:flex; flex-direction:column; gap:10px; }
+.callback-form input{ background:rgba(255,255,255,.03); border:1px solid var(--border); border-radius:var(--radius-sm); padding:12px 16px; font-family:'Manrope',sans-serif; font-size:.88rem; color:var(--text); outline:none; width:100%; transition:border-color .25s, box-shadow .25s, background .25s; }
+.callback-form input::placeholder{ color:#454d61; }
+.callback-form input:focus{ border-color:var(--accent); box-shadow:0 0 0 3px rgba(6,182,212,.12); background:rgba(6,182,212,.03); }
+.callback-form .btn{ padding:12px 20px; font-size:.85rem; margin-top:2px; }
+.callback-success{ display:none; margin-top:14px; padding:12px 16px; border-radius:var(--radius-sm); background:rgba(34,211,168,.06); border:1px solid rgba(34,211,168,.25); font-size:.84rem; color:var(--success); font-weight:600; text-align:center; }
+.callback-success.show{ display:block; animation:modalPop .4s var(--ease); }
 
 .contact-form-card{ padding:38px 34px; }
 .f-row{ display:grid; gap:18px; margin-bottom:18px; }
@@ -911,10 +920,22 @@ footer.site-footer{ border-top:1px solid var(--border); padding:64px 0 32px; pos
         <div class="hours-card glass">
           <h5>Business Hours</h5>
           <div class="hours-row"><span>Monday – Friday</span><span>9:00 AM – 7:00 PM</span></div>
-          <div class="hours-row"><span>Saturday</span><span>10:00 AM – 4:00 PM</span></div>
-          <div class="hours-row"><span>Sunday</span><span>Closed</span></div>
+          <div class="hours-row"><span>Saturday – Sunday</span><span>10:00 AM – 4:00 PM</span></div>
         </div>
-        <a href="#contact" class="btn btn-secondary calendly-btn" onclick="return false;">📅 Book a Call — Calendly (coming soon)</a>
+        <div class="callback-card glass">
+          <h5>📞 Request a Callback</h5>
+          <p class="callback-sub">Prefer a normal phone call? Leave your number and we'll call you.</p>
+          <form id="callbackForm" class="callback-form" novalidate>
+            <input id="cb-name" type="text" placeholder="Your Name" required aria-label="Your Name" />
+            <input id="cb-phone" type="tel" placeholder="Phone Number" required aria-label="Phone Number" />
+            <button type="submit" class="btn btn-primary f-submit btn-block" id="cbSendBtn">
+              <span class="btn-txt">Request Callback</span>
+              <div class="spinner"></div>
+            </button>
+            <div class="f-error" id="cbErrorMsg">⚠ Something went wrong. Please try again or message us on WhatsApp.</div>
+          </form>
+          <div class="callback-success" id="cbSuccess">✓ Got it! We'll call you back shortly.</div>
+        </div>
       </div>
 
       <div class="contact-form-card glass reveal">
@@ -1411,6 +1432,39 @@ function shake(el){
   void el.offsetWidth;
   el.style.animation = 'shakeX .4s ease';
 }
+
+/* ===== CALLBACK REQUEST FORM — uses the same EmailJS service/template ===== */
+const cbForm = document.getElementById('callbackForm');
+const cbSendBtn = document.getElementById('cbSendBtn');
+const cbErrorMsg = document.getElementById('cbErrorMsg');
+const cbSuccess = document.getElementById('cbSuccess');
+
+cbForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const cbName = document.getElementById('cb-name').value.trim();
+  const cbPhone = document.getElementById('cb-phone').value.trim();
+  if (!cbName || !cbPhone) { shake(cbSendBtn); return; }
+
+  cbSendBtn.disabled = true;
+  cbSendBtn.classList.add('loading');
+  cbErrorMsg.classList.remove('show');
+
+  try {
+    await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+      from_name: cbName,
+      mobile: cbPhone,
+      subject: 'Callback Request',
+      message: `${cbName} requested a normal phone call back at ${cbPhone}.`
+    });
+    cbForm.style.display = 'none';
+    cbSuccess.classList.add('show');
+  } catch (err) {
+    console.error('EmailJS callback error:', err);
+    cbErrorMsg.classList.add('show');
+    cbSendBtn.disabled = false;
+    cbSendBtn.classList.remove('loading');
+  }
+});
 </script>
 
 </body>
